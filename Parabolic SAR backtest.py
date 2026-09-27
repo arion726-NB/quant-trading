@@ -17,7 +17,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import fix_yahoo_finance as yf
+import yfinance as yf
 import pandas as pd
 
 
@@ -139,7 +139,7 @@ def main():
     #a two year dataset with 500 variables would be too much for a figure
     slicer=450
 
-    df=yf.download(ticker,start=stdate,end=eddate)
+    df=yf.download(ticker,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
     
     #delete adj close and volume
     #as we dont need them
@@ -153,7 +153,7 @@ def main():
 
     #convert back to time series for plotting
     #so that we get a date x axis
-    new.set_index(new['date'],inplace=True)
+    new.set_index(new['Date'],inplace=True)
 
     #shorten our plotting horizon and plot
     new=new[slicer:]

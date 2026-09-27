@@ -342,7 +342,7 @@ def stats(portfolio,trading_signals,stdate,eddate,capital0=10000):
     std=float(np.sqrt((((portfolio['return']-growth_rate)**2).sum())/len(trading_signals)))
 
     #use S&P500 as benchmark
-    benchmark=yf.download('^GSPC',start=stdate,end=eddate)
+    benchmark=yf.download('^GSPC',start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
 
     #return of benchmark
     return_of_benchmark=float(benchmark['Close'].iloc[-1]/benchmark['Open'].iloc[0]-1)
@@ -412,7 +412,7 @@ def main():
     slicer=700
 
     #downloading data
-    df=yf.download(ticker,start=stdate,end=eddate)
+    df=yf.download(ticker,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
 
     trading_signals=signal_generation(df,heikin_ashi,stls)
 

@@ -32,7 +32,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import fix_yahoo_finance as yf
+import yfinance as yf
 import random as rd
 from sklearn.model_selection import train_test_split
 
@@ -374,7 +374,7 @@ def main():
     eddate='2019-01-15'
     ticker='GE'
 
-    df=yf.download(ticker,start=stdate,end=eddate)
+    df=yf.download(ticker,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
     df.index=pd.to_datetime(df.index)
     
     forecast_horizon,d,pick=monte_carlo(df)

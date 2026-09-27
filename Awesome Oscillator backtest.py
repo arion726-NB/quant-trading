@@ -23,7 +23,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import fix_yahoo_finance as yf
+import yfinance as yf
 
 
 # In[2]:
@@ -307,7 +307,7 @@ def main():
     stdate=input('start date in format yyyy-mm-dd:')
     eddate=input('end date in format yyyy-mm-dd:')
     ticker=input('ticker:')
-    df=yf.download(ticker,start=stdate,end=eddate)
+    df=yf.download(ticker,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
 
     #slicing the downloaded dataset
     #if the dataset is too large

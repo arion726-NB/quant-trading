@@ -32,7 +32,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import fix_yahoo_finance as yf
+import yfinance as yf
 
 
 # In[2]:
@@ -376,7 +376,7 @@ def main():
     ticker='FCAU'
     startdate='2016-01-01'
     enddate='2018-01-01'
-    df=yf.download(ticker,start=startdate,end=enddate)
+    df=yf.download(ticker,start=startdate,end=enddate,auto_adjust=False,multi_level_index=False)
     new=signal_generation(df,rsi,n=14)
 
     plot(new,ticker)

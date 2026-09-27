@@ -322,8 +322,8 @@ def main():
     ticker2='AMD'
 
     #extract data
-    asset1=yf.download(ticker1,start=stdate,end=eddate)
-    asset2=yf.download(ticker2,start=stdate,end=eddate)  
+    asset1=yf.download(ticker1,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
+    asset2=yf.download(ticker2,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)  
 
     #create signals
     signals=signal_generation(asset1,asset2,EG_method)

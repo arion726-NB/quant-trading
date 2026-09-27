@@ -246,7 +246,7 @@ def main():
     name='Vodafone'
     ticker='VOD.L'
 
-    df=yfinance.download(ticker,start=stdate,end=eddate)
+    df=yfinance.download(ticker,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
     df.reset_index(inplace=True)
     df['Date']=pd.to_datetime(df['Date'])
 
