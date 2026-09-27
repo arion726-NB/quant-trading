@@ -170,7 +170,8 @@ def plot(new,column='Close'):
     #the first plot is the actual trading day
     fig=plt.figure()
     ax=fig.add_subplot(111)
-    day[column].plot(label='price')
+    #plot through matplotlib so the markers share the same datetime axis
+    ax.plot(day.index,day[column],label='price')
     ax.plot(day.loc[day['signals']>0].index,day[column][day['signals']>0],lw=0,marker='^',c='g',label='LONG')
     ax.plot(day.loc[day['signals']<0].index,day[column][day['signals']<0],lw=0,marker='v',c='r',label='SHORT')
     

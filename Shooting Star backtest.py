@@ -37,9 +37,12 @@ def shooting_star(data,lower_bound,body_size):
             df['Close']-df['Open']),1,0)
 
     #a candle with a small lower body
+    #compared with the average body size
+    #the mean of signed bodies cancels out to almost zero
+    #so the average absolute body is used instead
     df['condition3']=np.where(abs(
-        df['Open']-df['Close'])<abs(
-        np.mean(df['Open']-df['Close']))*body_size,1,0)
+        df['Open']-df['Close'])<np.mean(abs(
+        df['Open']-df['Close']))*body_size,1,0)
 
     #a long upper wick that is at least two times the size of the lower body
     df['condition4']=np.where(
@@ -258,14 +261,11 @@ def main():
     new=signal_generation(df,shooting_star)
 
     #get subset for better viz to highlight shooting star
-    #the original vodafone example sits at rows 5268-5283
-    #for any other ticker, zoom in around the latest shooting star
-    if ticker=='VOD.L' and stdate=='2000-01-01':
-        subset=new.loc[5268:5283].copy()
-    else:
-        stars=new.index[new['signals']==-1]
-        last=stars[-1] if len(stars)>0 else new.index[-1]
-        subset=new.loc[max(last-5,0):last+10].copy()
+    #the original hardcoded rows 5268-5283 no longer line up with yahoo data
+    #so zoom in around the latest shooting star instead
+    stars=new.index[new['signals']==-1]
+    last=stars[-1] if len(stars)>0 else new.index[-1]
+    subset=new.loc[max(last-5,0):last+10].copy()
     subset.reset_index(inplace=True,drop=True)
 
     #viz
