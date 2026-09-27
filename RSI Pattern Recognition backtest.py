@@ -32,7 +32,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import yfinance as yf
+import yahoo_data
 
 
 # In[2]:
@@ -373,10 +373,11 @@ def pattern_plot(new,ticker):
 
 def main():
     
-    ticker='FCAU'
-    startdate='2016-01-01'
-    enddate='2018-01-01'
-    df=yf.download(ticker,start=startdate,end=enddate,auto_adjust=False,multi_level_index=False)
+    #FCAU merged into Stellantis, yahoo keeps its history under STLA
+    #run as python "RSI Pattern Recognition backtest.py" [ticker] [start] [end]
+    #taiwan stocks can be given as 2330, 6488, 0050 ...
+    ticker,startdate,enddate=yahoo_data.cli_args('STLA','2016-01-01','2018-01-01')
+    df=yahoo_data.download(ticker,start=startdate,end=enddate)
     new=signal_generation(df,rsi,n=14)
 
     plot(new,ticker)

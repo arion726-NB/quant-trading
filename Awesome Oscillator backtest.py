@@ -23,7 +23,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import yfinance as yf
+import yahoo_data
 
 
 # In[2]:
@@ -304,15 +304,15 @@ def main():
     ma2=34
 
     #downloading
-    stdate=input('start date in format yyyy-mm-dd:')
-    eddate=input('end date in format yyyy-mm-dd:')
-    ticker=input('ticker:')
-    df=yf.download(ticker,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
+    #run as python "Awesome Oscillator backtest.py" [ticker] [start] [end]
+    #taiwan stocks can be given as 2330, 6488, 0050 ...
+    ticker,stdate,eddate=yahoo_data.cli_args('MSFT','2016-01-01','2018-01-01')
+    df=yahoo_data.download(ticker,start=stdate,end=eddate)
 
     #slicing the downloaded dataset
     #if the dataset is too large
     #backtesting plot would look messy
-    slicer=int(input('slicing:'))
+    slicer=0
     signals=signal_generation(df,ewmacd,ma1,ma2)
     sig=awesome_signal_generation(signals,awesome_ma)
     new=sig[slicer:]

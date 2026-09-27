@@ -20,7 +20,6 @@
 #rules of bollinger bands and bottom w can be found in the following link:
 # https://www.tradingview.com/wiki/Bollinger_Bands_(BB)
 
-import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import copy
@@ -28,7 +27,7 @@ import numpy as np
 
 
 # In[2]:
-os.chdir('D:/STOCK/Quant-Trading/data')
+import yahoo_data
 
 
 # In[3]:
@@ -64,7 +63,7 @@ def bollinger_bands(df):
 #finally, we locate the second bottom node m, condition 3
 #plz refer to the following link for my poor visualization
 # https://github.com/je-suis-tm/quant-trading/blob/master/preview/bollinger%20bands%20bottom%20w%20pattern.png
-def signal_generation(data,method):
+def signal_generation(data,method,alpha=0.0001,beta=0.0001):
     
     #according to investopedia
     #for a double bottom pattern
@@ -78,8 +77,10 @@ def signal_generation(data,method):
     #beta denotes the scale of bandwidth
     #when bandwidth is larger than beta, it is expansion period
     #when bandwidth is smaller than beta, it is contraction period
-    alpha=0.0001
-    beta=0.0001
+    #both are relative to the price so the same values work for
+    #gbpusd around 1.3 and a taiwan stock around 1000
+    #the original minute data used 0.0001 on gbpusd, about 0.0075%
+    #daily bars move far more, run_all.py and main() pass 1%
     
     df=method(data)
     df['signals']=0
@@ -113,8 +114,8 @@ def signal_generation(data,method):
             for j in range(i,i-period,-1):                
                 
                 #condition 2
-                if (np.abs(df['mid band'][j]-df['price'][j])<alpha) and \
-                (np.abs(df['mid band'][j]-df['upper band'][i])<alpha):
+                if (np.abs(df['mid band'][j]-df['price'][j])<alpha*df['price'][i]) and \
+                (np.abs(df['mid band'][j]-df['upper band'][i])<alpha*df['price'][i]):
                     moveon=True
                     break
             
@@ -123,7 +124,7 @@ def signal_generation(data,method):
                 for k in range(j,i-period,-1):
                     
                     #condition 1
-                    if (np.abs(df['lower band'][k]-df['price'][k])<alpha):
+                    if (np.abs(df['lower band'][k]-df['price'][k])<alpha*df['price'][i]):
                         threshold=df['price'][k]
                         moveon=True
                         break
@@ -142,7 +143,7 @@ def signal_generation(data,method):
                 for m in range(i,j,-1):
                     
                     #condition 3
-                    if (df['price'][m]-df['lower band'][m]<alpha) and \
+                    if (df['price'][m]-df['lower band'][m]<alpha*df['price'][i]) and \
                     (df['price'][m]>df['lower band'][m]) and \
                     (df['price'][m]<threshold):
                         df.at[i,'signals']=1
@@ -161,7 +162,7 @@ def signal_generation(data,method):
         #just in case our signal generation time is contraction period
         #but we dont wanna clear positions right now
         if (df['cumsum'][i]!=0) and \
-        (df['std'][i]<beta) and \
+        (df['std'][i]<beta*df['price'][i]) and \
         (moveon==False):
             df.at[i,'signals']=-1
             df['cumsum']=df['signals'].cumsum()
@@ -177,10 +178,14 @@ def plot(new):
     #as usual we could cut the dataframe into a small slice
     #for a tight and neat figure
     #a and b denotes entry and exit of a trade
-    a,b=list(new[new['signals']!=0].iloc[:2].index)
+    trades=list(new[new['signals']!=0].iloc[:2].index)
+    if len(trades)<2 or new['signals'].loc[trades[0]]!=1:
+        print('no complete bollinger bands trade in this period, nothing to plot')
+        return
+    a,b=trades
     
     newbie=new[a-85:b+30]
-    newbie.set_index(pd.to_datetime(newbie['date'],format='%Y-%m-%d %H:%M:%S'),inplace=True)
+    newbie.set_index(pd.to_datetime(newbie['date']),inplace=True)
 
    
     fig=plt.figure(figsize=(10,5))
@@ -220,11 +225,15 @@ def plot(new):
 #ta-da
 def main():
     
-    #again, i download data from histdata.com
-    #and i take the average of bid and ask price
-    df=pd.read_csv('gbpusd.csv')
+    #the original used gbpusd minute data from histdata.com
+    #now daily bars come from yahoo finance
+    #run as python "Bollinger Bands Pattern Recognition backtest.py" [ticker] [start] [end]
+    #taiwan stocks can be given as 2330, 6488, 0050 ...
+    ticker,stdate,eddate=yahoo_data.cli_args('GBPUSD=X','2016-01-01','2024-12-31')
+    data=yahoo_data.download(ticker,start=stdate,end=eddate)
+    df=pd.DataFrame({'date':data.index,'price':data['Close'].values})
     
-    signals=signal_generation(df,bollinger_bands)
+    signals=signal_generation(df,bollinger_bands,alpha=0.02,beta=0.015)
 
     new=copy.deepcopy(signals)
     plot(new)

@@ -32,7 +32,10 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import yfinance as yf
+import os
+import sys
+sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import yahoo_data
 import random as rd
 from sklearn.model_selection import train_test_split
 
@@ -370,11 +373,11 @@ def test(df,ticker,simu_start=100,simu_end=1000,simu_delta=100,**kwargs):
 #if quants only look at one sigma event, the portfolio performance would be devastating
 def main():
     
-    stdate='2016-01-15'
-    eddate='2019-01-15'
-    ticker='GE'
+    #run as python "Monte Carlo backtest.py" [ticker] [start] [end]
+    #taiwan stocks can be given as 2330, 6488, 0050 ...
+    ticker,stdate,eddate=yahoo_data.cli_args('GE','2016-01-15','2019-01-15')
 
-    df=yf.download(ticker,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
+    df=yahoo_data.download(ticker,start=stdate,end=eddate)
     df.index=pd.to_datetime(df.index)
     
     forecast_horizon,d,pick=monte_carlo(df)

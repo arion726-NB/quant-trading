@@ -131,19 +131,19 @@ def signal_generation(dataset,x,y,method, \
                     #this would fill in the blank once our model turns invalid
                     #when we have a new valid model
                     #the new forecast and confidence intervals would cover the former one
-                    df.at[i:,'forecast']= \
+                    df.loc[i:,'forecast']= \
                     m.predict(sm.add_constant(df[x].iloc[i:]))
                     
-                    df.at[i:,'pos2 sigma']= \
+                    df.loc[i:,'pos2 sigma']= \
                     df['forecast'].iloc[i:]+2*sigma
                     
-                    df.at[i:,'neg2 sigma']= \
+                    df.loc[i:,'neg2 sigma']= \
                     df['forecast'].iloc[i:]-2*sigma
                     
-                    df.at[i:,'pos1 sigma']= \
+                    df.loc[i:,'pos1 sigma']= \
                     df['forecast'].iloc[i:]+sigma
                     
-                    df.at[i:,'neg1 sigma']= \
+                    df.loc[i:,'neg1 sigma']= \
                     df['forecast'].iloc[i:]-sigma
             
             #once we have a valid model
@@ -160,19 +160,19 @@ def signal_generation(dataset,x,y,method, \
                     #there would be confidence intervals even when the model is broken
                     #we could have been asking why no trade has been executed,
                     #even when actual price falls out of the confidence intervals?
-                    df.at[i:,'pos2 sigma']=df['forecast']
-                    df.at[i:,'neg2 sigma']=df['forecast']
-                    df.at[i:,'pos1 sigma']=df['forecast']
-                    df.at[i:,'neg1 sigma']=df['forecast']
+                    df.loc[i:,'pos2 sigma']=df['forecast']
+                    df.loc[i:,'neg2 sigma']=df['forecast']
+                    df.loc[i:,'pos1 sigma']=df['forecast']
+                    df.loc[i:,'neg1 sigma']=df['forecast']
                     
                 if df[y].iloc[i]<df['neg2 sigma'].iloc[i]:
                     df.at[i,'signals']=-1
                     holding=-1
                     
-                    df.at[i:,'pos2 sigma']=df['forecast']
-                    df.at[i:,'neg2 sigma']=df['forecast']
-                    df.at[i:,'pos1 sigma']=df['forecast']
-                    df.at[i:,'neg1 sigma']=df['forecast']
+                    df.loc[i:,'pos2 sigma']=df['forecast']
+                    df.loc[i:,'neg2 sigma']=df['forecast']
+                    df.loc[i:,'pos1 sigma']=df['forecast']
+                    df.loc[i:,'neg1 sigma']=df['forecast']
 
                     
     return df

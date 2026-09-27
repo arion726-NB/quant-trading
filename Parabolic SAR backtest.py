@@ -17,7 +17,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import yfinance as yf
+import yahoo_data
 import pandas as pd
 
 
@@ -131,15 +131,17 @@ def plot(new,ticker):
 def main():
     
     #download data via fix yahoo finance library
-    stdate=('2016-01-01')
-    eddate=('2018-01-01')
-    ticker=('EA')
+    #EA was taken private and no longer has data on yahoo, TTWO is its closest peer
+    #run as python "Parabolic SAR backtest.py" [ticker] [start] [end]
+    #taiwan stocks can be given as 2330, 6488, 0050 ...
+    ticker,stdate,eddate=yahoo_data.cli_args('TTWO','2016-01-01','2018-01-01')
 
     #slice is used for plotting
     #a two year dataset with 500 variables would be too much for a figure
     slicer=450
 
-    df=yf.download(ticker,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
+    df=yahoo_data.download(ticker,start=stdate,end=eddate)
+    slicer=min(slicer,max(len(df)-50,0))
     
     #delete adj close and volume
     #as we dont need them

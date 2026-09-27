@@ -7,12 +7,10 @@ Created on Tue Feb  6 11:57:46 2018
 
 # In[1]:
 
-#need to get fix yahoo finance package first
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import yfinance as yf
+import yahoo_data
 
 
 
@@ -116,19 +114,20 @@ def main():
     #there is just one issue
     #entry signal is always late
     #watch out for downward EMA spirals!
-    ma1=int(input('ma1:'))
-    ma2=int(input('ma2:'))
-    stdate=input('start date in format yyyy-mm-dd:')
-    eddate=input('end date in format yyyy-mm-dd:')
-    ticker=input('ticker:')
+    ma1=10
+    ma2=21
+
+    #run as python "MACD Oscillator backtest.py" [ticker] [start] [end]
+    #taiwan stocks can be given as 2330, 6488, 0050 ...
+    ticker,stdate,eddate=yahoo_data.cli_args('MSFT','2016-01-01','2018-01-01')
 
     #slicing the downloaded dataset
     #if the dataset is too large, backtesting plot would look messy
     #you get too many markers cluster together
-    slicer=int(input('slicing:'))
+    slicer=0
 
     #downloading data
-    df=yf.download(ticker,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
+    df=yahoo_data.download(ticker,start=stdate,end=eddate)
     
     new=signal_generation(df,macd)
     new=new[slicer:]

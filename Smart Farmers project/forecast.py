@@ -93,30 +93,30 @@ def get_production(initial_guess):
 def get_production(initial_guess):
     
     #get historical price
-    price_hist=np.mat(D[currentyear-1]['price']).T
+    price_hist=np.asmatrix(D[currentyear-1]['price']).T
 
     #create alpha diagonal
     alpha=np.diag(D[currentyear]['alpha'])
 
     #get historical production
     #use negative value
-    production_hist=np.mat(D[currentyear-1]['production']).T
+    production_hist=np.asmatrix(D[currentyear-1]['production']).T
 
     #get population change
     delta_pop=malay_pop['Value'][malay_pop['Year']==currentyear].item()-malay_pop['Value'][malay_pop['Year']==currentyear-1].item()
 
     #create beta
-    beta=np.mat(D[currentyear]['beta']).T
+    beta=np.asmatrix(D[currentyear]['beta']).T
 
     #get gdp per capita change
     delta_gdp=malay_gdp['Value'][malay_gdp['Year']==currentyear].item()-malay_gdp['Value'][malay_gdp['Year']==currentyear-1].item()
 
     #create gamma
-    gamma=np.mat(D[currentyear]['gamma']).T
+    gamma=np.asmatrix(D[currentyear]['gamma']).T
 
     #create linear coefficient
     #production_hist*-1 to obtain negative production
-    linear_coeff=-price_hist+(alpha*production_hist*-1)-delta_pop*beta-delta_gdp*gamma+np.mat(initial_guess).T
+    linear_coeff=-price_hist+(alpha*production_hist*-1)-delta_pop*beta-delta_gdp*gamma+np.asmatrix(initial_guess).T
     linear_coeff=cvxopt.matrix(linear_coeff)
 
     #create quadratic coefficient
@@ -140,7 +140,7 @@ def get_production(initial_guess):
 
     #concat
     inequality_coeff=cvxopt.matrix(np.append(upperblock,lowerblock,axis=0))
-    inequality_value=cvxopt.matrix((area_hist*upperbound).append(np.multiply(np.multiply(area_hist,eco_lifespan),-1)))
+    inequality_value=cvxopt.matrix(pd.concat([area_hist*upperbound,np.multiply(np.multiply(area_hist,eco_lifespan),-1)]))
     
     #cvxopt
     estimate=get_ans(quadratic_coeff,linear_coeff,inequality_coeff,
@@ -257,26 +257,26 @@ def write_file(dic):
 def compute_price(production):
     
     #get historical price
-    price_hist=np.mat(D[currentyear-1]['price']).T
+    price_hist=np.asmatrix(D[currentyear-1]['price']).T
 
     #create alpha diagonal
     alpha=np.diag(D[currentyear]['alpha'])
 
     #get historical production
     #use negative value
-    production_hist=np.mat(D[currentyear-1]['production']).T
+    production_hist=np.asmatrix(D[currentyear-1]['production']).T
 
     #get population change
     delta_pop=malay_pop['Value'][malay_pop['Year']==currentyear].item()-malay_pop['Value'][malay_pop['Year']==currentyear-1].item()
 
     #create beta
-    beta=np.mat(D[currentyear]['beta']).T
+    beta=np.asmatrix(D[currentyear]['beta']).T
 
     #get gdp per capita change
     delta_gdp=malay_gdp['Value'][malay_gdp['Year']==currentyear].item()-malay_gdp['Value'][malay_gdp['Year']==currentyear-1].item()
 
     #create gamma
-    gamma=np.mat(D[currentyear]['gamma']).T
+    gamma=np.asmatrix(D[currentyear]['gamma']).T
     
     #predict price
     price_est=price_hist+delta_pop*beta+delta_gdp*gamma-(alpha*production*-1)+(alpha*production_hist*-1)
@@ -474,7 +474,7 @@ plt.show()
 price_predict={}
 for currentyear in range(beginyear,endyear):
     
-    price_predict[currentyear]=compute_price(np.mat(X[currentyear]).T)
+    price_predict[currentyear]=compute_price(np.asmatrix(X[currentyear]).T)
 
 #plot predicted price
 for ii in range(len(price_predict[currentyear])):
@@ -514,7 +514,7 @@ gdp_extra['Year Code']=range(beginyear,endyear)
 
 gdp_extra['Value']=capita['Mid Price'][str(beginyear):str(endyear)].tolist()
 
-malay_gdp=malay_gdp.append(gdp_extra)
+malay_gdp=pd.concat([malay_gdp,gdp_extra])
 
 
 # In[25]:
@@ -545,7 +545,7 @@ temp.pop(0)
 #concat land
 land_extra['Value']=temp
 
-malay_land=malay_land.append(land_extra)
+malay_land=pd.concat([malay_land,land_extra])
 
 
 # In[28]:
@@ -561,7 +561,7 @@ for currentyear in range(beginyear,endyear):
     D[currentyear]['Year']=currentyear
     
     D[currentyear]['production']=get_production(cost_optimal)
-    D[currentyear]['price']=compute_price(np.mat(D[currentyear]['production']).T)
+    D[currentyear]['price']=compute_price(np.asmatrix(D[currentyear]['production']).T)
     D[currentyear]['area']=np.multiply(D[currentyear]['production'],D[currentyear]['yield_i'])
 
 

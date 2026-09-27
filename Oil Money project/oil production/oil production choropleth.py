@@ -56,7 +56,8 @@ m=folium.Map(location=(30,50), zoom_start=4)
 #threshold_scale can only take up to six values in a list
 #for simplicity, we can use from branca.utilities import split_six
 #to get the quantile data equally divided into six parts
-m.choropleth(
+#newer folium replaced m.choropleth with the folium.Choropleth layer
+folium.Choropleth(
  geo_data=(open("worldmapshape.json",encoding = "utf_8_sig").read()),
  name='choropleth',
  data=df,
@@ -66,13 +67,18 @@ m.choropleth(
  fill_opacity=0.7,
  line_opacity=0.2,
  legend_name='Oil Production Thousand Barrels/Day',
- threshold_scale=[0.0,1.0, 150.0, 800.0, 2000.0, 4000.0]
-)
+ #newer folium rejects values above the last bin, so the top bin ends at the largest producer
+ threshold_scale=[0.0,1.0, 150.0, 800.0, 2000.0, 4000.0, max(df['Oil Production'].max()+1,4001.0)]
+).add_to(m)
 
 #layout control is just a map filter
 #we can unselect choropleth any time
 folium.LayerControl().add_to(m)
-display(m)
+
+#display only exists inside jupyter
+#as a script we save the map and open it in a browser
+m.save('oil production choropleth.html')
+print('map saved to',os.path.abspath('oil production choropleth.html'))
 
 #in general, folium is a really good wrap up for leaflet.js
 #it saves me a lot of time from learning javascript

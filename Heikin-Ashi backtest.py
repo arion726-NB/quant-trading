@@ -16,8 +16,6 @@ Created on Thu Feb 15 20:48:35 2018
 #details of heikin ashi indicators and rules can be found in the following link
 # https://quantiacs.com/Blog/Intro-to-Algorithmic-Trading-with-Heikin-Ashi.aspx
 
-#need to get yfinance package first
-#it changes its name from fix_yahoo_finance to yfinance, lol
 
 
 # In[2]:
@@ -25,7 +23,7 @@ Created on Thu Feb 15 20:48:35 2018
 
 import pandas as pd
 import matplotlib.pyplot as plt
-import yfinance as yf
+import yahoo_data
 import numpy as np
 import scipy.integrate
 import scipy.stats
@@ -326,7 +324,7 @@ def mdd(series):
     
 
 #stats calculation
-def stats(portfolio,trading_signals,stdate,eddate,capital0=10000):
+def stats(portfolio,trading_signals,stdate,eddate,capital0=10000,benchmark_ticker='^GSPC'):
 
     stats=pd.DataFrame([0])
 
@@ -341,8 +339,8 @@ def stats(portfolio,trading_signals,stdate,eddate,capital0=10000):
     #calculating the standard deviation
     std=float(np.sqrt((((portfolio['return']-growth_rate)**2).sum())/len(trading_signals)))
 
-    #use S&P500 as benchmark
-    benchmark=yf.download('^GSPC',start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
+    #use S&P500 as benchmark, TAIEX for taiwan stocks
+    benchmark=yahoo_data.download(benchmark_ticker,start=stdate,end=eddate)
 
     #return of benchmark
     return_of_benchmark=float(benchmark['Close'].iloc[-1]/benchmark['Open'].iloc[0]-1)
@@ -403,26 +401,36 @@ def main():
     #as long as the market condition triggers the signal
     #in a whipsaw condition, it is suicidal
     stls=3
-    ticker='NVDA'
-    stdate='2015-04-01'
-    eddate='2018-02-15'
+    #run as python "Heikin-Ashi backtest.py" [ticker] [start] [end]
+    #taiwan stocks can be given as 2330, 6488, 0050 ...
+    ticker,stdate,eddate=yahoo_data.cli_args('NVDA','2015-04-01','2018-02-15')
 
     #slicer is used for plotting
     #a three year dataset with 750 data points would be too much
     slicer=700
 
     #downloading data
-    df=yf.download(ticker,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
+    df=yahoo_data.download(ticker,start=stdate,end=eddate)
+
+    #100 shares on 10k capital suits us stocks
+    #taiwan stocks trade in lots of 1000 shares, priced in twd
+    if yahoo_data.is_taiwan(ticker):
+        capital0,positions,benchmark_ticker=1000000,1000,'^TWII'
+    else:
+        capital0,positions,benchmark_ticker=10000,100,'^GSPC'
+
+    #keep the plot readable on datasets shorter than the original
+    slicer=min(slicer,max(len(df)-250,0))
 
     trading_signals=signal_generation(df,heikin_ashi,stls)
 
     viz=trading_signals[slicer:]
     plot(viz,ticker)
 
-    portfolio_details=portfolio(viz)
+    portfolio_details=portfolio(viz,capital0,positions)
     profit(portfolio_details)
 
-    stats(portfolio_details,trading_signals,stdate,eddate)
+    stats(portfolio_details,trading_signals,stdate,eddate,capital0,benchmark_ticker)
 
     #note that this is the only py file with complete stats calculation
     

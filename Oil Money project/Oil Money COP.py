@@ -297,7 +297,12 @@ dataset.reset_index(inplace=True)
 #import the strategy script as this is a script for analytics and visualization
 #the official trading strategy script is in the following link
 # https://github.com/je-suis-tm/quant-trading/blob/master/Oil%20Money%20project/Oil%20Money%20Trading%20backtest.py
-import oil_money_trading_backtest as om
+#the trading backtest file name has spaces, so load it by path
+import importlib.util
+spec=importlib.util.spec_from_file_location('oil_money_trading_backtest',
+     os.path.join(os.path.dirname(os.path.abspath(__file__)),'Oil Money Trading backtest.py'))
+om=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(om)
 
 #generate signals,monitor portfolio performance
 #plot positions and total asset

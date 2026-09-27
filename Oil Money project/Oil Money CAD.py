@@ -132,7 +132,8 @@ for i in temp:
 plt.title('Regressions on Loonie')
 plt.ylabel('R Squared\n')
 plt.xlabel('\nRegressors')
-plt.xticks(np.arange(len(temp))+width,
+#cad itself is the regressand, it has no bar
+plt.xticks(np.arange(len(temp)-1)+width,
            ['Yuan', 'Sterling', 'Dollar', 'Euro', 'KRW',
              'MXN', 'Gas', 'WCS', 'Edmonton',
              'WTI', 'Gold', 'Yen'],fontsize=10)
@@ -284,7 +285,7 @@ ax.scatter3D(xdata[df['class']==1],ydata[df['class']==1],
              zdata[df['class']==1],c='#46344e',s=10,alpha=0.5,
              label='After {}'.format(threshold.strftime('%Y-%m-%d')))
 ax.grid(False)
-for i in ax.w_xaxis, ax.w_yaxis, ax.w_zaxis:
+for i in ax.xaxis, ax.yaxis, ax.zaxis:
     i.pane.set_visible(False)  
     
 ax.set_xlabel('WCS')

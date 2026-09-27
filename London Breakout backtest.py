@@ -41,10 +41,18 @@
 #which is est 3 am
 #daylight saving time is another story
 #what a stupid idea it is
-import os
-os.chdir('D:/STOCK/Quant-Trading/data')
+#yahoo finance update
+#the original read gbpusd minute data in est from histdata.com
+#now 5 minute bars come from yahoo finance in the exchange's local time
+#fx pairs such as GBPUSD=X are in uk time, so the tokyo hour is 7am to 8am
+#london opens at 8am and closes at 5pm
+#stocks have no tokyo hour before their open
+#for 2330.TW and other stocks we use the first 30 minutes of the day
+#as the opening range, then trade the breakout until the last bar
+#this is the classic opening range breakout
 import matplotlib.pyplot as plt
 import pandas as pd
+import yahoo_data
 
 # In[2]:
 
@@ -63,221 +71,156 @@ def london_breakout(df):
     return df
 
 
-def signal_generation(df,method):
+#split one day into the range window and the trading session
+def daily_windows(bars,fx,open_minutes):
+
+    if fx:
+        minutes=bars.index.hour*60+bars.index.minute
+        tokyo=bars[(minutes>=7*60) & (minutes<8*60)]
+        london=bars[(minutes>=8*60) & (minutes<17*60)]
+        return tokyo,london
+
+    market_open=bars.index[0]+pd.Timedelta(minutes=open_minutes)
+    return bars[bars.index<market_open],bars[bars.index>=market_open]
+
+
+def signal_generation(df,method,column='Close',fx=True):
     
-    #tokyo_price is a list to store average price of
-    #the last trading hour of tokyo market
-    #we use max, min to define the real threshold later
-    tokyo_price=[]
-
-    #risky_stop is a parameter set by us
-    #it is to reduce the risk exposure to volatility
-    #i am using 100 basis points
-    #for instance, we have defined our upper and lower thresholds
-    #however, when london market opens
-    #the price goes skyrocketing 
-    #say 200 basis points above upper threshold
-    #i personally wouldnt get in the market as its too risky
-    #also, my stop loss and target is 50 basis points
-    #just half of my risk interval
-    #i will use this variable for later stop loss set up
-    risky_stop=0.01
-
-    #this is another parameter set by us
-    #it is about how long opening volatility would wear off
-    #for me, 30 minutes after the market opening is the boundary
-    #as long as its under 30 minutes after the market opening
-    #if the price reaches threshold level, i will trade on signals
+    #risky_stop is the risk tolerance
+    #the original used 100 basis points on gbpusd around 1.32
+    #we express it relative to the price so it fits stocks too
+    #open_minutes is the length of the window to trigger a trade
+    #and the length of the opening range for stocks
+    risky_stop=0.0075
     open_minutes=30
-
-    #this is the price when we execute a trade
-    #we need to save it to set up the stop loss
-    executed_price=float(0)
     
     signals=method(df)
-    signals['date']=pd.to_datetime(signals['date'])
     
-    #this is the core part
-    #the time complexity for this part is extremely high
-    #as there are too many constraints
-    #if u have a better idea to optimize it
-    #plz let me know
-
-    for i in range(len(signals)):
+    for day,bars in signals.groupby(signals.index.normalize()):
         
-        #as mentioned before
-        #the dataset use eastern standard time
-        #so est 2am is the last hour before london starts
-        #we try to append all the price into the list called threshold
-        if signals['date'][i].hour==2:
-            tokyo_price.append(signals['price'][i])
+        #the last trading hour of tokyo, or the opening range for stocks
+        #we use max, min to define the real threshold
+        tokyo,london=daily_windows(bars,fx,open_minutes)
+        if len(tokyo)==0 or len(london)==0:
+            continue
+        
+        upper=max(tokyo[column])
+        lower=min(tokyo[column])
+        stop=risky_stop*upper
+        entry_end=london.index[0]+pd.Timedelta(minutes=open_minutes)
+        
+        position=0
+        executed_price=float(0)
+        
+        for i in london.index:
             
-        #est 3am which is gmt 8am
-        #thats when london market starts
-        #good morning city of london and canary wharf!
-        #right at this moment
-        #we get max and min of the price of tokyo trading hour
-        #we set up the threshold as the way it is
-        #alternatively, we can put 10 basis points above and below thresholds
-        #we also use upper and lower list to keep track of our thresholds
-        #and now we clear the list called threshold
-        elif signals['date'][i].hour==3 and signals['date'][i].minute==0:
-
-            upper=max(tokyo_price)
-            lower=min(tokyo_price)
-
-            signals.at[i,'upper']=upper
-            signals.at[i,'lower']=lower
-
-            tokyo_price=[]
+            price=signals.at[i,column]
             
-        #prior to 30 minutes i have mentioned before
-        #as long as its under 30 minutes after market opening
-        #signals will be generated once conditions are met
-        #this is a relatively risky way
-        #alternatively, we can set the signal generation time at a fixed point
-        #when its gmt 8 30 am, we check the conditions to see if there is any signal
-        elif signals['date'][i].hour==3 and signals['date'][i].minute<open_minutes:
-
-            #again, we wanna keep track of thresholds during signal generation periods
-            signals.at[i,'upper']=upper
-            signals.at[i,'lower']=lower
+            #when its market close, we clear any position left open
+            #if there is no open position, -0 is still 0
+            if i==london.index[-1]:
+                signals.at[i,'signals']=-position
+                position=0
             
-            #this is the condition of signals generation
-            #when the price is above upper threshold
-            #we set signals to 1 which implies long
-            if signals['price'][i]-upper>0:
-                signals.at[i,'signals']=1
-
-                #we use cumsum to check the cumulated sum of signals
-                #we wanna make sure that
+            #the first 30 minutes after the market opens
+            elif i<entry_end:
+                signals.at[i,'upper']=upper
+                signals.at[i,'lower']=lower
+                
                 #only the first price above upper threshold triggers the signal
-                #also, if it goes skyrocketing
-                #say 200 basis points above, which is 100 above our risk tolerance
+                #also, if it goes skyrocketing beyond our risk tolerance
                 #we set it as a false alarm
-                signals['cumsum']=signals['signals'].cumsum()
-
-                if signals['price'][i]-upper>risky_stop:
-                    signals.at[i,'signals']=0
-
-                elif signals['cumsum'][i]>1:
-                    signals.at[i,'signals']=0
-
-                else:
-
-                    #we also need to store the price when we execute a trade
-                    #its for stop loss calculation
-                    executed_price=signals['price'][i]
-
-            #vice versa    
-            if signals['price'][i]-lower<0:
-                signals.at[i,'signals']=-1
-
-                signals['cumsum']=signals['signals'].cumsum()
-
-                if lower-signals['price'][i]>risky_stop:
-                    signals.at[i,'signals']=0
-
-                elif signals['cumsum'][i]<-1:
-                    signals.at[i,'signals']=0
-
-                else:
-                    executed_price=signals['price'][i]
-                    
-        #when its gmt 5 pm, london market closes
-        #we use cumsum to see if there is any position left open
-        #we take -cumsum as a signal
-        #if there is no open position, -0 is still 0
-        elif signals['date'][i].hour==12:
-            signals['cumsum']=signals['signals'].cumsum()
-            signals.at[i,'signals']=-signals['cumsum'][i]
+                #we also need to store the price when we execute a trade
+                #its for stop loss calculation
+                if price-upper>0 and price-upper<=stop and position<1:
+                    signals.at[i,'signals']=1
+                    position+=1
+                    executed_price=price
+                
+                #vice versa
+                if price-lower<0 and lower-price<=stop and position>-1:
+                    signals.at[i,'signals']=-1
+                    position-=1
+                    executed_price=price
             
-        #during london trading hour after opening but before closing
-        #we still use cumsum to check our open positions
-        #if there is any open position
-        #we set our condition at original executed price +/- half of the risk interval
-        #when it goes above or below our risk tolerance
-        #we clear positions to claim profit or loss
-        else:
-            signals['cumsum']=signals['signals'].cumsum()
-            
-            if signals['cumsum'][i]!=0:
-                if signals['price'][i]>executed_price+risky_stop/2:
-                    signals.at[i,'signals']=-signals['cumsum'][i]
-                    
-                if signals['price'][i]<executed_price-risky_stop/2:
-                    signals.at[i,'signals']=-signals['cumsum'][i]
+            #during trading hour after opening but before closing
+            #if there is any open position
+            #we set our condition at original executed price +/- half of the risk interval
+            #when it goes above or below our risk tolerance
+            #we clear positions to claim profit or loss
+            elif position!=0:
+                if price>executed_price+stop/2 or price<executed_price-stop/2:
+                    signals.at[i,'signals']=-position
+                    position=0
+    
+    signals['cumsum']=signals['signals'].cumsum()
     
     return signals
 
 
+# In[3]:
 
-def plot(new):
+def plot(new,column='Close'):
     
-    #the first plot is price with LONG/SHORT positions
+    #pick the latest day we execute a trade
+    traded=new.index[new['signals']!=0].normalize().unique()
+    date=traded[-1] if len(traded)>0 else new.index[-1].normalize()
+    day=new[new.index.normalize()==date]
+    
+    #the first plot is the actual trading day
     fig=plt.figure()
     ax=fig.add_subplot(111)
-
-    new['price'].plot(label='price')
-
-    ax.plot(new.loc[new['signals']==1].index,new['price'][new['signals']==1],lw=0,marker='^',c='g',label='LONG')
-    ax.plot(new.loc[new['signals']==-1].index,new['price'][new['signals']==-1],lw=0,marker='v',c='r',label='SHORT')
-      
-    #this is the part where i add some vertical line to indicate market beginning and ending
-    date=new.index[0].strftime('%Y-%m-%d')
-    plt.axvline('%s 03:00:00'%(date),linestyle=':',c='k')
-    plt.axvline('%s 12:00:00'%(date),linestyle=':',c='k')
-
-
+    day[column].plot(label='price')
+    ax.plot(day.loc[day['signals']>0].index,day[column][day['signals']>0],lw=0,marker='^',c='g',label='LONG')
+    ax.plot(day.loc[day['signals']<0].index,day[column][day['signals']<0],lw=0,marker='v',c='r',label='SHORT')
+    
+    #mark the window where trades can be triggered
+    window=day.index[day['upper']!=0]
+    if len(window)>0:
+        plt.axvline(window[0],linestyle=':',c='k')
+        plt.axvline(window[-1],linestyle=':',c='k')
+    
     plt.legend(loc='best')
-    plt.title('London Breakout')
+    plt.title('London Breakout %s'%date.strftime('%Y-%m-%d'))
     plt.ylabel('price')
     plt.xlabel('Date')
     plt.grid(True)
     plt.show()
-
-
-    #lets look at the market opening and break it down into 110 minutes
-    #we wanna observe how the price goes beyond the threshold
-
-    f='%s 02:50:00'%(date)
-    l='%s 03:30:00'%(date)
-    news=signals[f:l]
+    
+    #the second plot zooms in the market opening
+    if len(window)==0:
+        return
+    news=day[(day.index>=window[0]-pd.Timedelta(minutes=30)) & \
+             (day.index<=window[-1]+pd.Timedelta(minutes=30))]
+    
     fig=plt.figure()
     bx=fig.add_subplot(111)
-
-    bx.plot(news.loc[news['signals']==1].index,news['price'][news['signals']==1],lw=0,marker='^',markersize=10,c='g',label='LONG')
-    bx.plot(news.loc[news['signals']==-1].index,news['price'][news['signals']==-1],lw=0,marker='v',markersize=10,c='r',label='SHORT')
-
-    #i only need to plot non zero thresholds
-    #zero is the value outta market opening period 
+    bx.plot(news.loc[news['signals']>0].index,news[column][news['signals']>0],lw=0,marker='^',markersize=10,c='g',label='LONG')
+    bx.plot(news.loc[news['signals']<0].index,news[column][news['signals']<0],lw=0,marker='v',markersize=10,c='r',label='SHORT')
     bx.plot(news.loc[news['upper']!=0].index,news['upper'][news['upper']!=0],lw=0,marker='.',markersize=7,c='#BC8F8F',label='upper threshold')
     bx.plot(news.loc[news['lower']!=0].index,news['lower'][news['lower']!=0],lw=0,marker='.',markersize=5,c='#FF4500',label='lower threshold')
-    bx.plot(news['price'],label='price')
-
-
+    bx.plot(news[column],label='price')
     plt.grid(True)
     plt.ylabel('price')
     plt.xlabel('time interval')
     plt.xticks([])
-    plt.title('%s Market Opening'%date)
+    plt.title('%s Market Opening'%date.strftime('%Y-%m-%d'))
     plt.legend(loc='best')
     plt.show()
-    
-    
-# In[3]:
+
+
+# In[4]:
+
 def main():
     
-    df=pd.read_csv('gbpusd.csv')
-
-    signals=signal_generation(df,london_breakout)
-
-    new=signals
-    new.set_index(pd.to_datetime(signals['date']),inplace=True)
-    date=new.index[0].strftime('%Y-%m-%d')
-    new=new['%s'%date]
-
-    plot(new)
+    #yahoo finance only keeps 5 minute bars for the last 60 days
+    #run as python "London Breakout backtest.py" [ticker]
+    #taiwan stocks can be given as 2330, 6488, 0050 ...
+    ticker,_,_=yahoo_data.cli_args('GBPUSD=X',None,None)
+    df=yahoo_data.download_intraday(ticker)
+    
+    signals=signal_generation(df,london_breakout,fx=yahoo_data.is_fx(ticker))
+    plot(signals)
 
 #how to calculate stats could be found from my other code called Heikin-Ashi
 # https://github.com/je-suis-tm/quant-trading/blob/master/heikin%20ashi%20backtest.py

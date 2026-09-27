@@ -45,7 +45,8 @@ Created on Tue Feb  6 11:57:46 2018
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import yfinance as yf
+import sys
+import yahoo_data
 import statsmodels.api as sm
 
 
@@ -316,14 +317,21 @@ def portfolio(data):
 def main():
     
     #the sample i am using are NVDA and AMD from 2013 to 2014
-    stdate='2013-01-01'
-    eddate='2014-12-31'
-    ticker1='NVDA'
-    ticker2='AMD'
+    #run as python "Pair trading backtest.py" [ticker1] [ticker2] [start] [end]
+    #taiwan stocks can be given as 2881 2882, 2330 2303 ...
+    args=sys.argv[1:]+[None]*4
+    ticker1=args[0] or 'NVDA'
+    ticker2=args[1] or 'AMD'
+    stdate=args[2] or '2013-01-01'
+    eddate=args[3] or '2014-12-31'
 
     #extract data
-    asset1=yf.download(ticker1,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
-    asset2=yf.download(ticker2,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)  
+    asset1=yahoo_data.download(ticker1,start=stdate,end=eddate)
+    asset2=yahoo_data.download(ticker2,start=stdate,end=eddate)
+
+    #taiwan and us holidays differ, only keep days both assets traded
+    common=asset1.index.intersection(asset2.index)
+    asset1,asset2=asset1.loc[common],asset2.loc[common]
 
     #create signals
     signals=signal_generation(asset1,asset2,EG_method)

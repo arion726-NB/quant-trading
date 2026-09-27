@@ -17,7 +17,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import yfinance
+import yahoo_data
 
 
 # In[2]:
@@ -103,16 +103,20 @@ def signal_generation(df,method,
             ind+=1
             counter+=1
 
+            #the dataset ends before the exit, leave the position open
+            if ind>data.index[-1]:
+                break
+
             #set stop loss/profit at +-5%
             if abs(data['Close'].loc[
                 ind]/entry_pos-1)>stop_threshold:
                 stop=True
-                data['signals'].loc[ind]=1
+                data.at[ind,'signals']=1
 
             #set maximum holding period at 7 workdays
             if counter>=holding_period:
                 stop=True
-                data['signals'].loc[ind]=1
+                data.at[ind,'signals']=1
 
     #create positions
     data['positions']=data['signals'].cumsum()
@@ -206,7 +210,7 @@ def plot(data,name):
     #with long/short positions as up/down arrows
     ax2=plt.subplot2grid((250,1),(130,0),
                          rowspan=120,
-                         ylabel='£ per share',
+                         ylabel='price per share',
                          xlabel='Date')
     ax2.plot(data.index,
              data['Close'],
@@ -241,12 +245,12 @@ def plot(data,name):
 def main():
     
     #initializing
-    stdate='2000-01-01'
-    eddate='2021-11-04'
-    name='Vodafone'
-    ticker='VOD.L'
+    #run as python "Shooting Star backtest.py" [ticker] [start] [end]
+    #taiwan stocks can be given as 2330, 6488, 0050 ...
+    ticker,stdate,eddate=yahoo_data.cli_args('VOD.L','2000-01-01','2021-11-04')
+    name='Vodafone' if ticker=='VOD.L' else ticker
 
-    df=yfinance.download(ticker,start=stdate,end=eddate,auto_adjust=False,multi_level_index=False)
+    df=yahoo_data.download(ticker,start=stdate,end=eddate)
     df.reset_index(inplace=True)
     df['Date']=pd.to_datetime(df['Date'])
 
@@ -254,7 +258,14 @@ def main():
     new=signal_generation(df,shooting_star)
 
     #get subset for better viz to highlight shooting star
-    subset=new.loc[5268:5283].copy()
+    #the original vodafone example sits at rows 5268-5283
+    #for any other ticker, zoom in around the latest shooting star
+    if ticker=='VOD.L' and stdate=='2000-01-01':
+        subset=new.loc[5268:5283].copy()
+    else:
+        stars=new.index[new['signals']==-1]
+        last=stars[-1] if len(stars)>0 else new.index[-1]
+        subset=new.loc[max(last-5,0):last+10].copy()
     subset.reset_index(inplace=True,drop=True)
 
     #viz

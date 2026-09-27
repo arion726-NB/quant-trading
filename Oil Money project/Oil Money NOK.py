@@ -129,8 +129,7 @@ def dual_axis_plot(xaxis,data1,data2,fst_color='r',
 dual_axis_plot(df.index,df['nok'],df['interest rate'],
                fst_color='#34262b',sec_color='#cb2800',
                fig_size=(10,5),x_label='Date',
-               y_label1='NOKJPY',y_label2='Norges Bank Interest Rate 
-               %',
+               y_label1='NOKJPY',y_label2='Norges Bank Interest Rate %',
                legend1='NOKJPY',legend2='Interest Rate',
                grid=False,title='NOK vs Interest Rate')
 
@@ -290,7 +289,7 @@ ax.plot(pd.to_datetime('2017-12-20'),
          lw=0,marker='*',c='#f9d423', markersize=15, alpha=0.8,
          label='Potential Exit Point of Momentum Trading')
 
-plt.axvline('2017/11/15',linestyle=':',c='k',label='Exit')
+plt.axvline(pd.to_datetime('2017-11-15'),linestyle=':',c='k',label='Exit')
 plt.legend()
 plt.title('NOKJPY Positions')
 plt.ylabel('NOKJPY')
@@ -436,7 +435,7 @@ ax.fill_between(portfolio['2017-11-20':'2017-12-20'].index,
 plt.text(pd.to_datetime('2017-12-20'),
           (portfolio['total asset']+np.std(portfolio['total asset'])).loc['2017-12-20'],
           'What if we use MACD here?')
-plt.axvline('2017/11/15',linestyle=':',label='Exit',c='#ff847c')
+plt.axvline(pd.to_datetime('2017-11-15'),linestyle=':',label='Exit',c='#ff847c')
 plt.legend()
 plt.title('Portfolio Performance')
 plt.ylabel('Asset Value')
@@ -459,7 +458,16 @@ plt.show()
 #here i would only import the strategy script as this is a script for analytics and visualization
 #the official trading strategy script is in the following link
 # https://github.com/je-suis-tm/quant-trading/blob/master/Oil%20Money%20project/Oil%20Money%20Trading%20backtest.py
-import oil_money_trading_backtest as om
+#the trading backtest file name has spaces, so load it by path
+import importlib.util
+spec=importlib.util.spec_from_file_location('oil_money_trading_backtest',
+     os.path.join(os.path.dirname(os.path.abspath(__file__)),'Oil Money Trading backtest.py'))
+om=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(om)
+
+#the strategy iterates with integer positions
+#so feed it the same table with a plain range index
+dataset=df.reset_index(drop=True)
 
 #generate signals,monitor portfolio performance
 #plot positions and total asset
@@ -478,7 +486,7 @@ om.profit(p,'nok')
 dic={}
 for holdingt in range(5,20):
     for stopp in np.arange(0.3,1.1,0.05):
-        signals=om.signal_generation(dataset,'brent','nok',om.oil_money \
+        signals=om.signal_generation(dataset,'brent','nok',om.oil_money, \
                                      holding_threshold=holdingt, \
                                      stop=stopp)
         
