@@ -28,7 +28,7 @@ import numpy as np
 
 
 # In[2]:
-os.chdir('d:/')
+os.chdir('D:/STOCK/Quant-Trading/data')
 
 
 # In[3]:

@@ -10,7 +10,7 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import re
 
-os.chdir('d:/')
+os.chdir('D:/STOCK/Quant-Trading/Oil Money project/data')
 df=pd.read_csv('urals crude rubaud.csv')
 
 

@@ -16,7 +16,7 @@ import dateutil
 import decimal
 import os
 import numpy as np
-os.chdir('K:/ecole/github/televerser/données')
+os.chdir('D:/STOCK/Quant-Trading/data')
 
 
 # In[2]:

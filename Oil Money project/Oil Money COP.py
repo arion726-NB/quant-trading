@@ -11,7 +11,7 @@ import statsmodels.api as sm
 import seaborn as sns
 import numpy as np
 from sklearn.model_selection import train_test_split
-os.chdir('k:/')
+os.chdir('D:/STOCK/Quant-Trading/Oil Money project/data')
 
 
 # In[2]:

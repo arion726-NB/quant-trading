@@ -54,7 +54,7 @@ target_year=[2000,
 import pandas as pd
 import numpy as np
 import os
-os.chdir('H:/')
+os.chdir('D:/STOCK/Quant-Trading/Smart Farmers project/data')
 
 
 # In[4]:

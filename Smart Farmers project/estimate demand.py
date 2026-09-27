@@ -10,7 +10,7 @@ import pandas as pd
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import cvxopt
-os.chdir('H:/')
+os.chdir('D:/STOCK/Quant-Trading/Smart Farmers project/data')
 
 
 # ### define functions

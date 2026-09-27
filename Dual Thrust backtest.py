@@ -24,7 +24,7 @@ import pandas as pd
 
 # In[2]:
 
-os.chdir('D:/')
+os.chdir('D:/STOCK/Quant-Trading/data')
 
 
 # In[3]:

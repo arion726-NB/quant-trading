@@ -6,7 +6,7 @@
 
 import folium
 import os
-os.chdir('h:/')
+os.chdir('D:/STOCK/Quant-Trading/Oil Money project/oil production')
 import pandas as pd
 
 

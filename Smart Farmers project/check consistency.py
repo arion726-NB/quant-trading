@@ -5,7 +5,7 @@
 
 
 import os
-os.chdir('H:/')
+os.chdir('D:/STOCK/Quant-Trading/Smart Farmers project/data')
 import pandas as pd
 
 

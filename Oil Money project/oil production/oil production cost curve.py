@@ -7,7 +7,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-os.chdir('d:/')
+os.chdir('D:/STOCK/Quant-Trading/Oil Money project/oil production')
 import pandas as pd
 
 
@@ -113,7 +113,7 @@ def cost_curve(x,y1,y2=None,
 # https://www.imf.org/~/media/Files/Publications/REO/MCD-CCA/2018/May/English/mreo0518-statisticalappendix-elsx.ashx
 # https://www.eia.gov/opendata/qb.php?sdid=STEO.COPC_AG.A
 
-df=pd.read_csv('global oil cost curve.csv')
+df=pd.read_csv('oil production cost curve.csv')
 
 
 # In[4]:

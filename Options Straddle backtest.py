@@ -67,7 +67,7 @@
 #to make our life easier, we only consider european options with cash settlement in this script
 
 import os
-os.chdir('d:/')
+os.chdir('D:/STOCK/Quant-Trading/data')
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt

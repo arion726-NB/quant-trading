@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-os.chdir('d:/')
+os.chdir('D:/STOCK/Quant-Trading/Oil Money project/data')
 
 
 # In[2]:

@@ -63,7 +63,7 @@ import seaborn as sns
 from sklearn.linear_model import ElasticNetCV as en 
 from statsmodels.tsa.stattools import adfuller as adf
 import os
-os.chdir('d:/')
+os.chdir('D:/STOCK/Quant-Trading/Oil Money project/data')
 
 
 # In[2]:
