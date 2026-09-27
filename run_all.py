@@ -86,6 +86,9 @@ class ChartSaver:
 
 TW_FEE=0.001425
 
+#daily strategies whose signals depend on the high/low of the bar
+HIGH_LOW_STRATEGIES={'Awesome Oscillator','Heikin-Ashi','Parabolic SAR','Shooting Star'}
+
 
 def cost_per_side(symbol,intraday):
 
@@ -409,6 +412,12 @@ def main():
     print('trading cost per side: %.4f%% daily, %.4f%% intraday'%(
           cost_per_side(symbol,False)*100,cost_per_side(symbol,True)*100))
 
+    #verified on GBPUSD=X and EURUSD=X: where the close sits in the day's range
+    #correlates about -0.7 with the next day's return, impossible for real bars
+    fx_daily=yahoo_data.is_fx(symbol)
+    if fx_daily:
+        print('WARNING',yahoo_data.FX_DAILY_WARNING)
+
     daily_runs=[
         ('MACD',run_macd),
         ('Awesome Oscillator',run_awesome),
@@ -434,6 +443,8 @@ def main():
         print('running',name)
         try:
             price,exposure,note=func(df,symbol,charts)
+            if fx_daily and name in HIGH_LOW_STRATEGIES:
+                note='UNRELIABLE on yahoo fx daily high/low. '+note
             r=evaluate(name,'daily',price,exposure,cost_per_side(symbol,False),note)
             r['_price']=price
             results.append(r)
@@ -489,7 +500,10 @@ def main():
         shown[c]=shown[c].map(lambda x:'' if pd.isna(x) else '%.1f%%'%(x*100))
     shown['sharpe']=shown['sharpe'].map(lambda x:'' if pd.isna(x) else '%.2f'%x)
 
-    lines=['# %s backtest summary'%symbol,'',
+    lines=['# %s backtest summary'%symbol,'']
+    if fx_daily:
+        lines+=['WARNING: '+yahoo_data.FX_DAILY_WARNING,'']
+    lines+=[
            'Period %s to %s, trading cost per side %.4f%% (daily) / %.4f%% (intraday).'%(
                df.index[0].date(),df.index[-1].date(),
                cost_per_side(symbol,False)*100,cost_per_side(symbol,True)*100),'',

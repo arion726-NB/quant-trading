@@ -92,6 +92,10 @@ def is_fx(ticker):
     return ticker.upper().endswith('=X')
 
 
+FX_DAILY_WARNING=('yahoo fx daily bars (=X) have high/low covering a different window than the close, '
+                  'strategies using high/low on them look into the future; use them on stocks or intraday bars')
+
+
 def resolve(ticker):
     """Return the Yahoo symbol a user input maps to, e.g. '2330' -> '2330.TW'."""
 

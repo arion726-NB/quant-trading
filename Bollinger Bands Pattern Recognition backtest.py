@@ -184,7 +184,7 @@ def plot(new):
         return
     a,b=trades
     
-    newbie=new[a-85:b+30]
+    newbie=new[max(a-85,0):b+30]
     newbie.set_index(pd.to_datetime(newbie['date']),inplace=True)
 
    
@@ -209,9 +209,9 @@ def plot(new):
     
     #add some captions
     plt.text((newbie.loc[newbie['signals']==1].index[0]), \
-             newbie['lower band'][newbie['signals']==1],'Expansion',fontsize=15,color='#563838')
+             newbie['lower band'][newbie['signals']==1].iloc[0],'Expansion',fontsize=15,color='#563838')
     plt.text((newbie.loc[newbie['signals']==-1].index[0]), \
-             newbie['lower band'][newbie['signals']==-1],'Contraction',fontsize=15,color='#563838')
+             newbie['lower band'][newbie['signals']==-1].iloc[0],'Contraction',fontsize=15,color='#563838')
     
     plt.legend(loc='best')
     plt.title('Bollinger Bands Pattern Recognition')
